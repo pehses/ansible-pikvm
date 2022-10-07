@@ -1,0 +1,12 @@
+all:
+  hosts:
+    pikvm:
+      ansible_ssh_host: pikvm
+      ansible_ssh_port: 22
+  vars:
+    ansible_remote_tmp: /tmp/ansible  # /root directory is initially read-only
+    ansible_user: root
+    ansible_password: admin  # only used on first run (after that, key file authentification is used)
+    timezone: Europe/Berlin
+    pikvm_webpassword:   # example value, change it and better use ansible-vault
+    github_user_for_ssh_key: pehses

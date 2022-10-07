@@ -1,0 +1,47 @@
+---
+- hosts: all
+  become: yes
+  pre_tasks:
+    - name: switch to rw mode
+      command: rw
+  
+  tasks:
+    - name: Set timezone
+      command: "timedatectl set-timezone {{ timezone }}"
+    - name: Add ssh key for root
+      ansible.posix.authorized_key:
+        key: https://github.com/{{ github_user_for_ssh_key }}.keys
+        user: root
+        comment: "github-{{ github_user_for_ssh_key }}"
+    - name: Change 
+      shell: "echo {{ pikvm_webpassword }} | kvmd-htpasswd set admin -i"
+    - name: Copy stored kvmd configuration
+      copy:
+        src: "{{ item }}"
+        dest: /etc/kvmd/override.yaml
+        owner: root
+        mode: 644
+        force: yes
+      with_fileglob:
+        - files/kvmd/*
+    - name: SSH hardening
+      blockinfile:
+        path: /etc/ssh/sshd_config
+        validate: /usr/sbin/sshd -T -f %s
+        block: |
+          MaxAuthTries 3
+          MaxSessions 5
+          PasswordAuthentication no
+      notify: Restart sshd
+    - name: Flush handlers
+      meta: flush_handlers
+
+  post_tasks:
+    - name: switch back to ro mode
+      command: ro
+
+  handlers:
+  - name: Restart sshd
+    service:
+      name: sshd
+      state: restarted
